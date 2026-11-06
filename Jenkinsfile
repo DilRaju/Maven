@@ -1,61 +1,47 @@
-@Library('mylibrary')_
-
-
 pipeline
 {
-    agent any
-    stages
-    {
-        stage('Download_Master')
-        {
-            steps
-            {
-                script
-                {
-                    cicd.gitDownload("maven")
-                }
-            }
-        }
-        stage('Build_Master')
-        {
-            steps
-            {
-                script
-                {
-                    cicd.buildArtifact()
-                }
-            }
-        }
-        stage('Deployment_Master')
-        {
-            steps
-            {
-                script
-                {
-                    cicd.deployTomcat("DeclarativePipelinewithSharedLibraries","172.31.31.19","myapp")
-                }
-            }
-        }
-        stage('Testing_Master')
-        {
-            steps
-            {
-                script
-                {
-                    cicd.gitDownload("FunctionalTesting")
-                    cicd.executeSelenium("DeclarativePipelinewithSharedLibraries")
-                }
-            }
-        }
-        stage('Delivery_Master')
-        {
-            steps
-            {
-                script
-                {
-                    cicd.deployTomcat("DeclarativePipelinewithSharedLibraries","172.31.25.180","myprodapp")
-                }
-            }
-        }
-    }
-}
+	agent 
+	{
+	    label 'Jenkins'
+	}
+	stages
+	{
+		stage('ContinuosDownload')
+		{
+			steps
+			{
+				git 'https://github.com/IntelliqDevops/maven.git'
+			}
+		}
+		stage('ContinuosBuild')
+		{
+			steps
+			{
+				sh 'mvn package'
+			}
+		}
+		stage('ContinuosDeployment')
+		{
+		    steps
+		    {
+		        deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'b74740d7-58d3-43f5-be16-b4b2cee7ea85', path: '', url: 'http://172.31.20.216:8080/')], contextPath: 'decltest', war: '**/*.war'
+		    }
+		}
+		stage('ContinuosTesting')
+		{
+		    steps
+		    {
+		        git 'https://github.com/IntelliqDevops/FunctionalTesting.git'
+		        sh 'java -jar testing.jar'
+		    }
+		}
+		stage('ContinuosDelivery')
+		{
+		    steps
+		    {
+		        deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'b74740d7-58d3-43f5-be16-b4b2cee7ea85', path: '', url: 'http://172.31.29.41:8080')], contextPath: 'declprod', war: '**/*.war'
+		    }
+		}
+	}	
+}	
+
